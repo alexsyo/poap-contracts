@@ -35,8 +35,20 @@ contract XPoap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausab
     // EventId for each token
     mapping(uint256 => uint256) private _tokenEvent;
 
+    
+    
+    // Royalty receiver
+    address private royaltyReceiver;
+
+    // Minimum fee for EIP2981
+    uint256 private royaltyBaseFee;
+
+    // Basis point for EIP2981
+    uint256 private royaltyBPS;
+
 
     bytes4 private constant _INTERFACE_ID_ERC721_METADATA = 0x5b5e139f;
+    bytes4 private constant _INTERFACE_ID_EIP2981 = 0x2a55205a;
 
     /**
      * @dev Gets the token name
@@ -257,6 +269,45 @@ contract XPoap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausab
             babcde[k++] = _be[i];
         }
         return string(babcde);
+    }
+
+
+    /**
+     * Should be called after updating the contract to initialize POAP royalties.
+     * Replaces initializer.
+     * @param _royaltyReceiver the address that will receive the royalty amount.
+     * @param _royaltyBaseFee the minimum amount of royalites for EIP2981 in WEI. 
+     * @param _royaltyBPS basis point for EIP2981.
+     */
+    function setRoyaltyInfo(address _royaltyReceiver, uint256 _royaltyBaseFee, uint256 _royaltyBPS) public onlyAdmin {
+        _registerInterface(_INTERFACE_ID_EIP2981);
+
+        royaltyReceiver = _royaltyReceiver;
+        royaltyBaseFee = _royaltyBaseFee;
+        royaltyBPS = _royaltyBPS;
+    }
+
+    /**
+     * returns the owner to be able to update the collection and set royalties on OpenSea
+     */
+    function owner() external view returns (address) {
+        return royaltyReceiver;
+    }
+
+    /**
+     * @dev Function to return royalty info.
+     * @param _tokenId the id for the token - specified by EIP2981, not used in this case.
+     * @param _salePrice the price of the token.
+     * @return receiver The address that will receive the royalty amount.
+     * @return royaltyAmount uint256 indicating the exact roylaty amount to be paid to the receiver.
+     */
+    function royaltyInfo(uint256 _tokenId, uint256 _salePrice) external view returns (address receiver, uint256 royaltyAmount) {
+        uint256 royaltyFee = _salePrice.mul(royaltyBPS).div(10000);
+        
+        return (
+            royaltyReceiver,
+            royaltyFee > royaltyBaseFee ? royaltyFee : royaltyBaseFee
+        );
     }
 
 }

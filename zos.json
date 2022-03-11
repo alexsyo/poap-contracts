@@ -3,7 +3,8 @@
   "name": "poap",
   "version": "0.1.0",
   "contracts": {
-    "Poap": "Poap"
+    "Poap": "Poap",
+    "XPoap": "XPoap"
   },
   "dependencies": {},
   "compiler": {
